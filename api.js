@@ -1,6 +1,7 @@
 const express = require("express");
 const OpenAI = require("openai");
 const { v4: uuidv4 } = require("uuid");
+const CryptoJS = require("crypto-js");
 
 const app = express();
 const port = 8080;
@@ -13,112 +14,21 @@ app.use((req, res, next) => {
   next();
 });
 
-const tokens = [
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-  "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",
-];
+const key = "mysecretkey12345";
+const tokens = decryptArray('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', key);
+
+function encryptArray(arr, key) {
+  const jsonString = JSON.stringify(arr);
+  const encrypted = CryptoJS.AES.encrypt(jsonString, key).toString();
+  return encrypted;
+}
+
+function decryptArray(encrypted, key) {
+  const decrypted = CryptoJS.AES.decrypt(encrypted, key).toString(
+    CryptoJS.enc.Utf8
+  );
+  return JSON.parse(decrypted);
+}
 
 function* apiKeysGenerator(tokens) {
   let index = 0;
@@ -140,7 +50,6 @@ const checkValidateDialog = (dialogue) =>
 
 async function processChatRequest(req, res) {
   const token = generator.next().value;
-
   try {
     const { dialogue } = req.body;
 
@@ -205,7 +114,7 @@ async function processChatRequest(req, res) {
 
         const tokenIndex = tokens.findIndex((tk) => tk === token);
         if (tokenIndex !== -1) {
-          delete tokens[tokenIndex];
+          tokens.splice(tokenIndex, 1);
           generator = apiKeysGenerator(tokens);
 
           console.error(
