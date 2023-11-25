@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require("uuid");
 const CryptoJS = require("crypto-js");
 
 const app = express();
-const port = 8080;
+const port = 80;
 
 app.use(express.json());
 
