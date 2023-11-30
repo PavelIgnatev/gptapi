@@ -89,16 +89,27 @@ async function processChatRequest(req, res) {
       data["temperature"] = temperature;
     }
 
-    const chatCompletion = await openai.chat.completions.create(data);
+    const chatPromise = openai.chat.completions.create(data);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Request timed out")), 60000)
+    );
+    const chatCompletion = await Promise.race([chatPromise, timeoutPromise]);
 
-    const { content } = chatCompletion.choices[0].message;
-    if (!content) {
+    if (
+      !chatCompletion ||
+      !chatCompletion.choices ||
+      !chatCompletion.choices[0] ||
+      !chatCompletion.choices[0].message ||
+      !chatCompletion.choices[0].message.content
+    ) {
       throw new Error("Result not found");
     }
+    const { content } = chatCompletion.choices[0].message;
 
     console.log(
       `[${req.timestamp}] Request ID ${req.id}: Dialog result: ${content}`
     );
+
     return res.send(content);
   } catch (error) {
     try {
