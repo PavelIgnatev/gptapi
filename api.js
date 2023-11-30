@@ -76,11 +76,16 @@ async function processChatRequest(req, res) {
       apiKey: token,
     });
 
-    const chatCompletion = await openai.chat.completions.create({
+    const data = {
       messages: dialogue,
       model: "gpt-3.5-turbo",
-      temperature,
-    });
+    };
+
+    if (temperature) {
+      data["temperature"] = temperature;
+    }
+
+    const chatCompletion = await openai.chat.completions.create(data);
 
     const { content } = chatCompletion.choices[0].message;
     if (!content) {
