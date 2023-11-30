@@ -81,7 +81,11 @@ async function processChatRequest(req, res) {
       model: "gpt-3.5-turbo",
     };
 
-    if (temperature) {
+    if (temperature !== 1) {
+      console.log(
+        `[${req.timestamp}] Request ID ${req.id}: Change default temperature: ${temperature}`
+      );
+
       data["temperature"] = temperature;
     }
 
