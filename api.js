@@ -211,6 +211,8 @@ async function processCompleteRequest(req, res) {
 
     if (
       !responseData ||
+      !responseData.usage ||
+      !responseData.usage.completion_tokens ||
       !responseData.choices ||
       !responseData.choices[0] ||
       !responseData.choices[0].text
@@ -219,9 +221,14 @@ async function processCompleteRequest(req, res) {
     }
 
     const content = responseData.choices[0].text.replace(/\n/g, "").trim();
+    const tokens = responseData.usage.completion_tokens;
 
     if (!content) {
       throw new Error("Result not found");
+    }
+
+    if (Number(tokens) === 255 || tokens === "255") {
+      throw new Error("Max tokens usage");
     }
 
     console.log(
