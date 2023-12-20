@@ -162,8 +162,87 @@ async function processChatRequest(req, res) {
   }
 }
 
+async function processCompleteRequest(req, res) {
+  const token = generator.next().value;
+  try {
+    const { prompt } = req.body;
+
+    if (!token) {
+      throw new Error("API key not defined");
+    }
+
+    console.log(
+      `[${req.timestamp}] Request ID ${req.id}: Current API key in processing: ${token}`
+    );
+
+    console.log(
+      `[${req.timestamp}] Request ID ${
+        req.id
+      }: Dialogue information for the request: ${JSON.stringify(prompt)}`
+    );
+
+    const data = {
+      prompt,
+      temperature: 1,
+      max_tokens: 255,
+      top_p: 1,
+      frequency_penalty: 0.3,
+      presence_penalty: 1,
+      stop: ["#", "\n", "\\n"],
+    };
+
+    const response = await fetch(
+      "https://api.openai.com/v1/engines/gpt-3.5-turbo-instruct/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+
+    if (
+      !responseData ||
+      !responseData.choices ||
+      !responseData.choices[0] ||
+      !responseData.choices[0].text
+    ) {
+      throw new Error("Result not found");
+    }
+
+    const content = responseData.choices[0].text.replace(/\n/g, "").trim();
+
+    if (!content) {
+      throw new Error("Result not found");
+    }
+
+    console.log(
+      `[${req.timestamp}] Request ID ${req.id}: Dialog result: ${content}`
+    );
+
+    return res.send(content);
+  } catch (error) {
+    console.error(
+      `[${req.timestamp}] Request ID ${req.id}: Error: ${error.message}`
+    );
+    return res.status(500).send("Unexpected error");
+  }
+}
+
 app.post("/chat", async (req, res) => {
   await processChatRequest(req, res);
+});
+
+app.post("/complete", async (req, res) => {
+  await processCompleteRequest(req, res);
 });
 
 app.get("/chat/count", async (req, res) => {
