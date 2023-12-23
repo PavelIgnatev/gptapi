@@ -188,7 +188,7 @@ async function processCompleteRequest(req, res) {
       top_p: 1,
       frequency_penalty: 0.3,
       presence_penalty: 1,
-      stop: ["#", "\n", "\\n"],
+      stop: ["#", '\n '],
     };
 
     const response = await fetch(
