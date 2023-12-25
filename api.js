@@ -188,6 +188,7 @@ async function processCompleteRequest(req, res) {
       top_p: 1,
       frequency_penalty: 0.3,
       presence_penalty: 1,
+      stop: ["#"],
     };
 
     const response = await fetch(
@@ -214,7 +215,8 @@ async function processCompleteRequest(req, res) {
       !responseData.usage.completion_tokens ||
       !responseData.choices ||
       !responseData.choices[0] ||
-      !responseData.choices[0].text
+      !responseData.choices[0].text ||
+      responseData.choices[0].text.length < 30
     ) {
       throw new Error("Result not found");
     }
