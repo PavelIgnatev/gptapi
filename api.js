@@ -215,8 +215,7 @@ async function processCompleteRequest(req, res) {
       !responseData.usage.completion_tokens ||
       !responseData.choices ||
       !responseData.choices[0] ||
-      !responseData.choices[0].text ||
-      responseData.choices[0].text.length < 30
+      !responseData.choices[0].text
     ) {
       throw new Error("Result not found");
     }
@@ -224,7 +223,7 @@ async function processCompleteRequest(req, res) {
     const content = responseData.choices[0].text.replace(/\n/g, "").trim();
     const tokens = responseData.usage.completion_tokens;
 
-    if (!content) {
+    if (!content || content.length < 30) {
       throw new Error("Result not found");
     }
 
