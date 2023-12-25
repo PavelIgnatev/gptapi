@@ -236,10 +236,53 @@ async function processCompleteRequest(req, res) {
 
     return res.send(content);
   } catch (error) {
-    console.error(
-      `[${req.timestamp}] Request ID ${req.id}: Error: ${error.message}`
-    );
-    return res.status(500).send("Unexpected error");
+    try {
+      const { message } = error;
+      const errorMessage = message?.toLowerCase();
+      console.error(
+        `[${req.timestamp}] Request ID ${req.id}: Error: ${errorMessage}`
+      );
+
+      try {
+        if (
+          errorMessage?.includes("rate limit") ||
+          errorMessage?.includes("result not found")
+        ) {
+          console.error(
+            `[${req.timestamp}] Request ID ${req.id}: Error: Rate Limit/Result not found`
+          );
+          throw new Error("Rate Limit/Result not found");
+        }
+
+        const tokenIndex = tokens.findIndex((tk) => tk === token);
+        if (tokenIndex !== -1) {
+          tokens.splice(tokenIndex, 1);
+          generator = apiKeysGenerator(tokens);
+
+          console.error(
+            `[${req.timestamp}] Request ID ${req.id}: Token found, deleting from tokens`
+          );
+        } else {
+          console.error(
+            `[${req.timestamp}] Request ID ${req.id}: Error: Token not found, no removal`
+          );
+        }
+
+        console.error(
+          `[${req.timestamp}] Request ID ${req.id}: Error that led to token removal`
+        );
+        throw new Error("Error that led to token removal");
+      } catch {
+        console.error(`[${req.timestamp}] Request ID ${req.id}: Error, RETRY`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await processCompleteRequest(req, res);
+      }
+    } catch {
+      console.error(
+        `[${req.timestamp}] Request ID ${req.id}: Error: Unexpected error`
+      );
+      return res.status(500).send("Unexpected error");
+    }
   }
 }
 
